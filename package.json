@@ -4,7 +4,9 @@
   "private": true,
   "description": "Community incident mapping and emergency response coordination",
   "type": "module",
-  "engines": {"node": ">=22.13.0"},
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
@@ -13,4 +15,3 @@
   },
   "license": "MIT"
 }
-

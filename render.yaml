@@ -1,0 +1,27 @@
+# Deployment proposal: creates a PAID service and persistent disk when applied.
+# Review and approve Render's displayed charges before applying this Blueprint.
+services:
+  - type: web
+    name: flood-finder-community
+    runtime: node
+    branch: community-interface
+    plan: 0.5c-512mb
+    buildCommand: node --check server.js && node --check public/app.js
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: off
+    disk:
+      name: flood-finder-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/flood-finder.sqlite
+      - key: NWS_AREAS
+        value: FL
+      - key: NWS_USER_AGENT
+        sync: false

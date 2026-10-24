@@ -14,38 +14,49 @@
   <script defer src="/app.js"></script>
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Skip to content</a>
   <header class="site-header">
     <a class="brand" href="#home" aria-label="Flood Finder home"><span class="brand-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3L3.5 12.3V28H28.5V12.3L16 3Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M4 21.5C7 19 10 19 13.5 21.5C17 24 20 24 23.5 21.5C25 20.4 27 20.3 29 21" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M4 26C7 23.5 10 23.5 13.5 26" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><span>flood<span class="brand-accent">finder</span><small>COMMUNITY RESPONSE NETWORK</small></span></a>
-    <nav aria-label="Main navigation" class="nav-links">
-      <a href="#home" data-nav="home">Overview</a><a href="#map" data-nav="map">Live incident map</a><a href="#admin" id="adminNav" data-nav="admin" hidden>Command center</a><a href="#tasks" id="tasksNav" data-nav="tasks" hidden>My assignments</a><a href="#help" data-nav="help">How it works</a>
+    <nav id="mainNav" aria-label="Main navigation" class="nav-links">
+      <a href="#home" data-nav="home">Overview</a><a href="#map" data-nav="map">Incident map</a><a href="#admin" id="adminNav" data-nav="admin" hidden>Command center</a><a href="#tasks" id="tasksNav" data-nav="tasks" hidden>My assignments</a><a href="#help" data-nav="help">How it works</a>
     </nav>
-    <div class="account-nav"><span id="userBadge" class="user-badge" hidden></span><button id="accountButton" class="button button-outline button-sm">Sign in</button><button id="signUpButton" class="button button-primary button-sm">Create account <span aria-hidden="true">↗</span></button><button id="logoutButton" class="button button-quiet button-sm" hidden>Sign out</button><button id="mobileMenu" class="icon-button mobile-menu" aria-label="Toggle menu">☰</button></div>
+    <div class="account-nav"><span id="userBadge" class="user-badge" hidden></span><button id="accountButton" class="button button-outline button-sm">Sign in</button><button id="signUpButton" class="button button-primary button-sm">Create account <span aria-hidden="true">↗</span></button><button id="logoutButton" class="button button-quiet button-sm" hidden>Sign out</button><button id="mobileMenu" class="icon-button mobile-menu" aria-label="Toggle menu" aria-expanded="false" aria-controls="mainNav">☰</button></div>
   </header>
-  <main>
+  <main id="mainContent" tabindex="-1">
     <section id="homeView" class="view">
       <div class="hero-shell">
         <div class="hero-main">
-          <div class="eyebrow"><span class="live-dot"></span> BUILT FOR WHEN EVERY MINUTE MATTERS <span class="eyebrow-line"></span> FLOOD FINDER / 01</div>
-          <h1>When disaster strikes,<br><em>every location</em><br>matters.</h1>
-          <p class="hero-copy">A shared picture of what's happening on the ground. Report flooding, blocked roads, outages, and damage—then help response teams get to the right place, faster.</p>
-          <div class="hero-actions"><a class="button button-primary button-lg" href="#map">Explore live map <span aria-hidden="true">↗</span></a><button id="heroReport" class="button button-glass button-lg">+ Report an incident</button></div>
-          <div class="hero-trust"><span class="avatar-stack" aria-hidden="true"><b>F</b><b>R</b><b>★</b></span><span>Community-powered reporting<br><strong>Verified and coordinated by real people</strong></span></div>
+          <div class="eyebrow"><span class="live-dot"></span> YOUR COMMUNITY. CONNECTED.</div>
+          <h1>A clearer picture.<br><em>A stronger response.</em></h1>
+          <p class="hero-copy">When storms disrupt everyday life, local knowledge makes a difference. Share what you see. Find reported conditions. Help your community respond.</p>
+          <div class="hero-actions"><a class="button button-primary button-lg" href="#map">Explore incident map <span aria-hidden="true">↗</span></a><button id="heroReport" class="button button-glass button-lg">+ Report an incident</button></div>
+          <div class="hero-trust"><span class="trust-mark" aria-hidden="true">✓</span><span>Community reports + official weather alerts<br><strong>One shared view, with people at the center.</strong></span></div>
         </div>
-        <div class="hero-visual" aria-label="Flood Finder incident coordination preview">
-          <div class="mock-map-grid"></div><span class="coast coastline-one"></span><span class="coast coastline-two"></span>
-          <div class="hero-top-label"><span class="status-light"></span> RESPONSE OPERATIONS / LIVE DATA</div>
-          <div class="hero-location"><span class="hero-crosshair">⌖</span> SOUTH FLORIDA <span>26.37°N 80.13°W</span></div>
-          <div class="radar radar-one"></div><div class="radar radar-two"></div>
-          <div class="hero-point point-one">!</div><div class="hero-point point-two">≋</div><div class="hero-point point-three">⚡</div><div class="hero-point point-four">!</div>
-          <div class="floating-report"><span class="report-icon">≋</span><div><small>COMMUNITY REPORT</small><strong>Water level rising</strong><span>Awaiting verification</span></div><span class="floating-dot"></span></div>
-          <div class="map-mock-footer"><span>LIVE INCIDENT INTELLIGENCE</span><span class="map-mock-pulse">● COORDINATED RESPONSE</span></div>
+        <div class="hero-visual" aria-label="Illustration of the community reporting workflow; not live incident data">
+          <div class="preview-top"><span class="preview-brand">⌖ COMMUNITY OVERVIEW</span><span class="preview-label">ILLUSTRATION</span></div>
+          <svg class="community-map" viewBox="0 0 600 470" fill="none" aria-hidden="true">
+            <rect width="600" height="470" fill="#e7f1ed"/>
+            <path d="M440 -30C370 90 510 115 417 223C333 320 477 350 390 500H640V-30Z" fill="#b8dce8"/>
+            <path d="M433 -20C365 90 502 119 410 222C329 320 466 355 380 500" stroke="#8dc2d4" stroke-width="3"/>
+            <g stroke="#fff" stroke-width="13"><path d="M-30 90L440 355M-20 300L370 25M70 500L380 -30M-30 205L402 444M-30 405L490 40"/><path d="M90 -20L354 490"/></g>
+            <g stroke="#c9d9d3" stroke-width="2"><path d="M-30 90L440 355M-20 300L370 25M70 500L380 -30M-30 205L402 444M-30 405L490 40M90 -20L354 490"/></g>
+            <path d="M210 128L252 151L226 191L187 166Z" fill="#bfd8bc"/><path d="M95 312L140 337L111 378L72 354Z" fill="#bfd8bc"/>
+            <path d="M172 305L255 244L329 286L367 225" stroke="#2563a6" stroke-width="6" stroke-linecap="round" stroke-dasharray="8 10"/>
+            <g fill="#fff" stroke="#d76a50" stroke-width="4"><circle cx="255" cy="244" r="20"/><circle cx="367" cy="225" r="20"/></g>
+            <path d="M245 246Q250 238 255 246T265 246M245 253Q250 245 255 253T265 253" stroke="#d76a50" stroke-width="2.5"/>
+            <path d="M367 214V227M367 234V235" stroke="#d76a50" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="172" cy="305" r="18" fill="#2563a6" stroke="#fff" stroke-width="4"/>
+            <path d="M165 305L171 310L180 299" stroke="#fff" stroke-width="3"/>
+          </svg>
+          <div class="preview-report"><span class="preview-report-icon">≋</span><div><small>01 / COMMUNITY REPORT</small><strong>Report. Review. Respond.</strong><span>Local information becomes coordinated action.</span></div></div>
+          <div class="preview-bottom"><span><i></i> Built around real locations</span><span>Powered by people ↗</span></div>
         </div>
       </div>
       <div class="metrics-strip" aria-label="Actual community report statistics">
         <div class="stat-box"><div class="stat-value" id="statActive">—</div><div class="stat-label"><span class="stat-mark cyan"></span>Active reports</div></div>
         <div class="stat-box"><div class="stat-value" id="statCritical">—</div><div class="stat-label"><span class="stat-mark orange"></span>Critical incidents</div></div>
         <div class="stat-box"><div class="stat-value" id="statResolved">—</div><div class="stat-label"><span class="stat-mark blue"></span>Resolved reports</div></div>
-        <div class="stat-caption">Real reports. Real locations.<br><span>No fabricated incidents or numbers.</span></div>
+        <div class="stat-caption">Your community, at a glance.<br><span>Counts reflect submitted reports.</span></div>
       </div>
       <section class="feature-section"><div class="section-kicker">THE RESPONSE PIPELINE <span>01 / 03</span></div><div class="feature-heading"><h2>From first report to<br><em>on-the-ground action.</em></h2><p>Everything communities and coordinators need to see the same picture and act with clarity.</p></div>
         <div class="feature-grid"><article class="feature-card"><span class="feature-index">01 / REPORT</span><div class="feature-symbol">⌖</div><h3>Pin the problem.</h3><p>Residents pinpoint flooding, outages, damaged infrastructure, or access issues on the map with severity and context.</p><span class="feature-tag">LOCATION-BASED REPORTING</span></article><article class="feature-card"><span class="feature-index">02 / VERIFY</span><div class="feature-symbol">◎</div><h3>See the whole picture.</h3><p>Live reports, priority filters, incident histories, and official NWS weather alerts help teams recognize what needs attention.</p><span class="feature-tag">SHARED SITUATIONAL AWARENESS</span></article><article class="feature-card"><span class="feature-index">03 / RESPOND</span><div class="feature-symbol">↗</div><h3>Send help precisely.</h3><p>Authorized coordinators assign response crews, track acknowledgment and progress, and view routes to incident coordinates.</p><span class="feature-tag">REAL RESPONSE WORKFLOWS</span></article></div>
@@ -54,17 +65,20 @@
     </section>
 
     <section id="mapView" class="view map-view" hidden>
-      <div class="workspace-heading"><div><div class="eyebrow eyebrow-dark"><span class="live-dot"></span> COMMUNITY SITUATIONAL AWARENESS</div><h1>Incident <em>map.</em></h1><p>Community submissions are unverified until reviewed. Updated as reports arrive.</p></div><div class="workspace-actions"><span class="sync-state" id="syncStatus"><span class="live-dot"></span> Connecting</span><button class="button button-outline" id="refreshButton">↻ Refresh</button><button class="button button-primary" id="mapReport">+ New report</button></div></div>
+      <div class="workspace-heading"><div><div class="eyebrow eyebrow-dark"><span class="live-dot"></span> COMMUNITY SITUATIONAL AWARENESS</div><h1>Incident <em>map.</em></h1><p>Community submissions are unverified until reviewed. Updated as reports arrive.</p></div><div class="workspace-actions"><span class="sync-state" id="syncStatus" role="status"><span class="live-dot"></span> Connecting</span><button class="button button-outline" id="refreshButton">↻ Refresh</button><button class="button button-primary" id="mapReport">+ New report</button></div></div>
+      <div class="connection-notice" id="connectionNotice" role="status" hidden></div>
       <div class="map-workspace">
         <aside class="incident-panel">
           <div class="panel-heading"><div><span class="overline">INCIDENT FEED</span><h2>Ground reports <span id="feedCount">0</span></h2></div><button class="icon-button" id="clearFilters" title="Clear filters" aria-label="Clear filters">↺</button></div>
           <label class="search-input"><span>⌕</span><input type="search" id="searchFilter" placeholder="Search reports or area…" aria-label="Search incidents"></label>
           <div class="filter-grid"><label><span>TYPE</span><select id="categoryFilter"><option value="">All incidents</option><option value="flood">Flooding</option><option value="road">Road blockage</option><option value="power">Power outage</option><option value="medical">Medical / safety</option><option value="debris">Storm debris</option><option value="shelter">Shelter need</option><option value="other">Other</option></select></label><label><span>STATUS</span><select id="statusFilter"><option value="">All statuses</option><option value="reported">Reported</option><option value="verified">Verified</option><option value="dispatched">Dispatched</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option><option value="rejected">Rejected</option></select></label></div>
+          <div class="filter-grid secondary-filters"><label><span>PRIORITY</span><select id="severityFilter"><option value="">All priorities</option><option value="critical">Critical</option><option value="high">High</option><option value="moderate">Moderate</option><option value="low">Low</option></select></label><label><span>SORT BY</span><select id="sortFilter"><option value="priority">Priority first</option><option value="newest">Newest first</option></select></label></div>
+          <label class="my-reports-filter" id="myReportsControl" hidden><input type="checkbox" id="myReportsFilter"> Only my reports</label>
           <div class="feed-note"><span class="amber-dot"></span> Reports are community-submitted, not emergency dispatch calls.</div>
-          <div class="incident-feed" id="incidentFeed"><div class="empty-state">Loading reports…</div></div>
-          <div class="panel-bottom"><span id="lastUpdated">Waiting for update</span><span class="online-symbol">● LIVE SYNC</span></div>
+          <div class="incident-feed" id="incidentFeed" aria-label="Incident results"><div class="empty-state">Loading reports…</div></div>
+          <div class="panel-bottom"><span id="lastUpdated">Waiting for update</span><span class="online-symbol" id="feedSyncStatus">CONNECTING</span></div>
         </aside>
-        <div class="map-area"><div class="map-toolbar"><div class="map-toolbar-caption"><span class="mini-live-dot"></span> GEOGRAPHIC OVERVIEW <span class="map-sep">/</span> OPENSTREETMAP</div><div class="map-toolbar-actions"><label class="switch-control"><input type="checkbox" id="alertsToggle"><span>NWS alerts</span></label><button class="mini-button" id="recenterButton">⌖ Recenter</button></div></div><div id="incidentMap" role="application" aria-label="Interactive map of reported incidents"></div><div id="routeInfo" class="route-info" hidden></div><div class="map-legend"><span><i class="legend-dot danger"></i>Critical</span><span><i class="legend-dot warn"></i>High</span><span><i class="legend-dot calm"></i>Other</span><span><i class="legend-dot completed"></i>Resolved</span></div></div>
+        <div class="map-area"><div class="map-toolbar"><div class="map-toolbar-caption"><span class="mini-live-dot"></span> GEOGRAPHIC OVERVIEW <span class="map-sep">/</span> OPENSTREETMAP</div><div class="map-toolbar-actions"><label class="switch-control"><input type="checkbox" id="alertsToggle"><span>NWS alerts</span></label><button class="mini-button" id="recenterButton" title="Fit visible reports on the map">⌖ Fit reports</button></div></div><div id="incidentMap" role="application" aria-label="Interactive map of reported incidents"></div><div id="routeInfo" class="route-info" hidden></div><div class="map-legend"><span><i class="legend-dot danger"></i>Critical</span><span><i class="legend-dot warn"></i>High</span><span><i class="legend-dot calm"></i>Other</span><span><i class="legend-dot completed"></i>Resolved</span></div></div>
       </div>
       <section class="alerts-section"><div class="section-title-row"><div><span class="overline">OFFICIAL WEATHER DATA</span><h2>National Weather Service alerts</h2></div><span id="nwsMeta" class="muted-small">Loading official feed…</span></div><div id="alertsFeed" class="alerts-feed"><div class="empty-state">Fetching weather alerts…</div></div><p class="micro-note">Alerts are from the U.S. National Weather Service. Community reports and official warnings are displayed as separate sources.</p></section>
     </section>

@@ -241,8 +241,10 @@ export function createApp({databasePath=process.env.DATABASE_PATH || './data/flo
         const coordinates= b.base_lat === '' || b.base_lat == null || b.base_lon === '' || b.base_lon == null ? {lat:null,lon:null} : parseCoords(b,'base_lat','base_lon');
         let lead=b.lead_user_id||null;
         if(lead&&!db.prepare("SELECT id FROM users WHERE id=? AND role IN ('responder','admin')").get(lead))throw err(400,'Team lead must have a responder account');
+        const availability=b.availability??'available';
+        if(!teamStates.includes(availability))throw err(400,'Invalid team availability');
         const ident=id();
-        db.prepare('INSERT INTO teams VALUES (?,?,?,?,?,?,?,?,?)').run(ident,name,specialty,contact,coordinates.lat,coordinates.lon,lead,'available',now());
+        db.prepare('INSERT INTO teams VALUES (?,?,?,?,?,?,?,?,?)').run(ident,name,specialty,contact,coordinates.lat,coordinates.lon,lead,availability,now());
         audit(db,user.id,'team_created',ident);
         broadcast({kind:'teams'});
         return response(res,201,{team:db.prepare('SELECT * FROM teams WHERE id=?').get(ident)});
@@ -281,7 +283,11 @@ export function createApp({databasePath=process.env.DATABASE_PATH || './data/flo
           if(team!==incident.team_id){
             db.prepare("UPDATE assignments SET status='reassigned',updated_at=? WHERE incident_id=? AND status NOT IN ('completed','reassigned','cancelled')")
               .run(now(),incident.id);
-            if(team){db.prepare('INSERT INTO assignments VALUES (?,?,?,?,?,?,?)').run(id(),incident.id,team,'assigned',user.id,now(),now());}
+            if(team&&!['resolved','rejected'].includes(resolvedStatus)){db.prepare('INSERT INTO assignments VALUES (?,?,?,?,?,?,?)').run(id(),incident.id,team,'assigned',user.id,now(),now());}
+          }
+          if(status==='rejected') db.prepare("UPDATE assignments SET status='cancelled',updated_at=? WHERE incident_id=? AND status NOT IN ('completed','reassigned','cancelled')").run(now(),incident.id);
+          if(!['resolved','rejected'].includes(resolvedStatus)&&team===incident.team_id&&team&&!db.prepare("SELECT id FROM assignments WHERE incident_id=? AND status NOT IN ('completed','reassigned','cancelled')").get(incident.id)){
+            db.prepare('INSERT INTO assignments VALUES (?,?,?,?,?,?,?)').run(id(),incident.id,team,'assigned',user.id,now(),now());
           }
           if(status==='resolved') db.prepare("UPDATE assignments SET status='completed',updated_at=? WHERE incident_id=? AND status NOT IN ('completed','reassigned','cancelled')").run(now(),incident.id);
           logUpdate(db,incident.id,user.id,'administrative_update',note||`Status: ${resolvedStatus}; priority: ${severity}${team?'; team assigned':''}`);
@@ -306,7 +312,9 @@ export function createApp({databasePath=process.env.DATABASE_PATH || './data/flo
         if(!assignment)throw err(404,'Assignment not found');
         if(user.role!=='admin'&&assignment.lead_user_id!==user.id)throw err(403,'This assignment belongs to another team');
         const index=assignmentStates.indexOf(b.status),oldIndex=assignmentStates.indexOf(assignment.status);
-        if(oldIndex<0||index<=oldIndex)throw err(409,'Assignment must move forward in order');
+        if(oldIndex<0||index!==oldIndex+1)throw err(409,'Assignment must move forward one step at a time');
+        const incident=readIncident(db,assignment.incident_id);
+        if(['resolved','rejected'].includes(incident.status))throw err(409,'This incident is already closed');
         runTransaction(db,()=>{
           db.prepare('UPDATE assignments SET status=?,updated_at=? WHERE id=?').run(b.status,now(),assignment.id);
           const status=b.status==='completed'?'resolved':'in_progress';

@@ -11,6 +11,9 @@ const shortDate = d => d ? new Date(d).toLocaleString(undefined,{month:'short',d
 const formatCoordinate = n => Number(n).toFixed(5);
 const state={user:null,incidents:[],filtered:[],teams:[],users:[],assignments:[],alerts:[],alertsStatus:'loading',weatherMeta:null,metrics:null,stats:null,map:null,reportMap:null,reportMarker:null,markers:null,weatherLayer:null,routeLayer:null,routeMarkers:null,selected:null,lastRefresh:null,stream:null,authMode:'login',mapReady:false};
 let debounceTimer,toastTimer,refreshTimer;
+let pendingReport = false;
+const pendingChanges = new Set();
+let myReportIds = new Set();
 async function api(path,{method='GET',body}={}) {
   const opts={method,credentials:'same-origin',headers:{'Accept':'application/json'}};
   if(method!=='GET'){opts.headers['X-FloodFinder']='1';opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body||{});}
@@ -27,7 +30,7 @@ function formError(selector,message){const el=$(selector);el.hidden=!message;el.
 function loadingButton(button,yes,label){button.disabled=yes;if(yes){button.dataset.oldLabel=button.textContent;button.textContent='Working…';}else button.textContent=label||button.dataset.oldLabel||button.textContent;}
 function openDialog(selector){const el=$(selector);if(!el.open)el.showModal();}
 function closeDialog(selector){const el=$(selector);if(el?.open)el.close();}
-function requireLogin(onReady){if(state.user){onReady();return;}toast('Sign in to publish a community report.');openAuth('register');}
+function requireLogin(onReady){if(state.user){onReady();return;}pendingReport=true;toast('Create an account or sign in to continue your report.');openAuth('register');}
 function openAuth(mode='login') {
   state.authMode=mode;
   $('#loginTab').classList.toggle('active',mode==='login');
@@ -49,7 +52,7 @@ async function submitAuth(e){
   formError('#authError','');
   try{
     const data=await api('/api/auth/'+(state.authMode==='register'?'register':'login'),{method:'POST',body:b});
-    state.user=data.user;form.reset();closeDialog('#authDialog');updateAuthUI();await refreshPrivate();route();toast('Signed in as '+data.user.name);
+    state.user=data.user;form.reset();closeDialog('#authDialog');updateAuthUI();await Promise.all([refreshPrivate(),fetchIncidents()]);route();toast('Signed in as '+data.user.name);if(pendingReport){pendingReport=false;openReport();}
   }catch(ex){formError('#authError',ex.message)}finally{loadingButton(button,false,state.authMode==='register'?'Create account ↗':'Sign in ↗');}
 }
 async function logout(){
@@ -62,6 +65,8 @@ function updateAuthUI(){
   $('#accountButton').hidden=!!u;$('#signUpButton').hidden=!!u;$('#logoutButton').hidden=!u;
   $('#adminNav').hidden=u?.role!=='admin';
   $('#tasksNav').hidden=!u||!['responder','admin'].includes(u.role);
+  $('#myReportsControl').hidden=!u;
+  if(!u){$('#myReportsFilter').checked=false;myReportIds.clear();renderIncidents();}
 }
 function route(){
   let target=location.hash.replace(/^#/,'')||'home';
@@ -71,6 +76,8 @@ function route(){
   for(const v of allowedViews)$('#'+v+'View').hidden=v!==target;
   $$('[data-nav]').forEach(el=>el.classList.toggle('active',el.dataset.nav===target));
   $('.nav-links').classList.remove('open');
+  $('#mobileMenu').setAttribute('aria-expanded','false');
+  $$('[data-nav]').forEach(el=>{if(el.dataset.nav===target)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});
   if(target==='map'){
     initializeMap();setTimeout(()=>{state.map?.invalidateSize();},90);
     renderIncidents();renderAlerts();
@@ -84,7 +91,9 @@ function statsRender(){
   $('#statActive').textContent=s.active;$('#statCritical').textContent=s.critical;$('#statResolved').textContent=s.resolved;
 }
 async function fetchIncidents(){
-  const [incidentData,statsData]=await Promise.all([api('/api/incidents'),api('/api/stats')]);
+  const [incidentData,statsData,mine]=await Promise.all([api('/api/incidents'),api('/api/stats'),state.user?api('/api/incidents/mine'):Promise.resolve({incidents:[]})]);
+  myReportIds=new Set(mine.incidents.map(i=>i.id));
+  $('#connectionNotice').hidden=true;
   state.incidents=incidentData.incidents;state.stats=statsData;state.lastRefresh=new Date();
   $('#lastUpdated').textContent='Updated '+state.lastRefresh.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
   statsRender();renderIncidents();if(!$('#adminView').hidden)renderAdmin();
@@ -104,19 +113,40 @@ async function refreshPrivate(){
   }catch(e){toast('Unable to load team data: '+e.message,'error')}
 }
 async function refreshAll(){
-  try{await Promise.all([fetchIncidents(),fetchAlerts(),refreshPrivate()]);}
-  catch(e){toast('Could not refresh: '+e.message,'error')}
+  const results=await Promise.allSettled([fetchIncidents(),fetchAlerts(),refreshPrivate()]);
+  if(results[0].status==='rejected')showConnectionError();
+  if(results.some(r=>r.status==='rejected'))toast('Some information could not refresh. Check your connection and try again.','error');
 }
+function showConnectionError(){
+  $('#connectionNotice').textContent='Reports could not refresh. Information on screen may be out of date. Use Refresh to try again.';
+  $('#connectionNotice').hidden=false;
+}
+function fitReports(){
+  if(!state.map)return;
+  if(!state.filtered.length){state.map.setView([26.3683,-80.1289],9);return;}
+  state.map.fitBounds(L.latLngBounds(state.filtered.map(i=>[i.lat,i.lon])),{padding:[55,85],maxZoom:14});
+}
+
 function filteredIncidents(){
-  const q=$('#searchFilter').value.trim().toLowerCase(),category=$('#categoryFilter').value,status=$('#statusFilter').value;
-  return state.incidents.filter(i=>(!category||i.category===category)&&(!status||i.status===status)&&(!q||[i.title,i.description,i.address,i.id].some(v=>String(v||'').toLowerCase().includes(q))));
+  const q=$('#searchFilter').value.trim().toLowerCase(),category=$('#categoryFilter').value,status=$('#statusFilter').value,severity=$('#severityFilter').value;
+  const onlyMine=$('#myReportsFilter').checked;
+  const items=state.incidents.filter(i=>(!category||i.category===category)&&(!status||i.status===status)&&(!severity||i.severity===severity)&&(!onlyMine||myReportIds.has(i.id))&&(!q||[i.title,i.description,i.address,i.id].some(v=>String(v||'').toLowerCase().includes(q))));
+  const rank={critical:0,high:1,moderate:2,low:3};
+  return items.sort((a,b)=>{
+    if($('#sortFilter').value==='priority'){
+      const closed=i=>['resolved','rejected'].includes(i.status)?1:0;
+      const difference=closed(a)-closed(b)||(rank[a.severity]??4)-(rank[b.severity]??4);
+      if(difference)return difference;
+    }
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
 }
 function severityPill(i){return `<span class="pill severity-${escapeHtml(i.severity)}">${escapeHtml(i.severity)}</span>`;}
 function renderIncidents(){
   state.filtered=filteredIncidents();$('#feedCount').textContent=state.filtered.length;
   const feed=$('#incidentFeed');
   feed.innerHTML=state.filtered.length?state.filtered.map(i=>`<button class="incident-item" data-open-id="${i.id}" type="button"><div class="incident-item-top">${severityPill(i)}<span class="status-tag">${escapeHtml(statusLabel(i.status))}</span></div><div class="incident-title">${escapeHtml(i.title)}</div><p class="incident-description">${escapeHtml(i.description)}</p><div class="incident-meta"><span>${escapeHtml(categories[i.category]||'Other')} · ${escapeHtml(i.address||'Pinned location')}</span><span>${shortDate(i.created_at)}</span></div></button>`).join(''):
-  `<div class="empty-state"><strong>No reports found.</strong><br>Change your filters or help your community by submitting a factual report.</div>`;
+  `<div class="empty-state"><strong>${state.incidents.length?'No matching reports.':'Your community starts here.'}</strong><br>${state.incidents.length?'Try another filter or clear your search.':'No incidents have been submitted yet. Add a factual report to help build the shared picture.'}</div>`;
   if(!state.map)return;
   state.markers?.clearLayers();
   for(const i of state.filtered){
@@ -317,6 +347,7 @@ async function updateAssignment(idValue,status){
 }
 async function initialize(){
   $('#footerYear').textContent=new Date().getFullYear();
+  $('.skip-link').addEventListener('click',e=>{e.preventDefault();$('#mainContent').focus();});
   $('#accountButton').addEventListener('click',()=>openAuth('login'));
   $('#signUpButton').addEventListener('click',()=>openAuth('register'));
   $('#logoutButton').addEventListener('click',logout);
@@ -338,14 +369,19 @@ async function initialize(){
   $('#teamForm').addEventListener('submit',submitTeam);
   $$('#addTeam,#addTeamSecondary').forEach(b=>b.addEventListener('click',()=>openTeam()));
   $$('#refreshButton,#adminRefresh,#tasksRefresh').forEach(b=>b.addEventListener('click',refreshAll));
-  $$('#categoryFilter,#statusFilter').forEach(el=>el.addEventListener('change',renderIncidents));
+  $$('#categoryFilter,#statusFilter,#severityFilter,#sortFilter,#myReportsFilter').forEach(el=>el.addEventListener('change',renderIncidents));
   $('#searchFilter').addEventListener('input',()=>{clearTimeout(debounceTimer);debounceTimer=setTimeout(renderIncidents,170)});
-  $('#clearFilters').addEventListener('click',()=>{$('#searchFilter').value='';$('#categoryFilter').value='';$('#statusFilter').value='';renderIncidents()});
+  $('#clearFilters').addEventListener('click',()=>{$('#searchFilter').value='';$('#categoryFilter').value='';$('#statusFilter').value='';$('#severityFilter').value='';$('#sortFilter').value='priority';$('#myReportsFilter').checked=false;renderIncidents()});
   $('#alertsToggle').addEventListener('change',renderAlerts);
-  $('#recenterButton').addEventListener('click',()=>state.map?.setView([26.3683,-80.1289],9));
-  $('#mobileMenu').addEventListener('click',()=>$('.nav-links').classList.toggle('open'));
+  $('#recenterButton').addEventListener('click',fitReports);
+  $('#mobileMenu').addEventListener('click',()=>{const open=$('.nav-links').classList.toggle('open');$('#mobileMenu').setAttribute('aria-expanded',String(open));});
   $$('[data-close]').forEach(btn=>btn.addEventListener('click',()=>closeDialog('#'+btn.dataset.close)));
-  $$('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
+  $$('dialog').forEach(d=>d.addEventListener('click',e=>{
+    if(e.target!==d)return;
+    const box=d.getBoundingClientRect();
+    if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom)d.close();
+  }));
+  $('#authDialog').addEventListener('close',()=>{if(!state.user)pendingReport=false;});
   document.body.addEventListener('click',e=>{
     const op=e.target.closest('[data-open-id]');if(op){openIncident(op.dataset.openId);return;}
     const edit=e.target.closest('[data-edit-team]');if(edit){openTeam(edit.dataset.editTeam);return;}
@@ -355,18 +391,26 @@ async function initialize(){
   window.addEventListener('hashchange',route);
   try{const me=await api('/api/auth/me');state.user=me.user;}catch(e){console.warn('Auth check failed',e)}
   updateAuthUI();route();
-  await Promise.allSettled([fetchIncidents(),fetchAlerts(),refreshPrivate()]);
+  await refreshAll();
   route();
   try{
     const events=new EventSource('/api/stream');state.stream=events;
-    events.onopen=()=>{$('#syncStatus').innerHTML='<span class="live-dot"></span> Live updates connected';};
-    events.onerror=()=>{$('#syncStatus').textContent='Reconnecting updates…';};
+    events.onopen=()=>{$('#syncStatus').innerHTML='<span class="live-dot"></span> Live updates connected';$('#feedSyncStatus').textContent='● LIVE SYNC';};
+    events.onerror=()=>{$('#syncStatus').textContent='Reconnecting updates…';$('#feedSyncStatus').textContent='RECONNECTING';};
     events.addEventListener('change',e=>{
-      const m=JSON.parse(e.data);clearTimeout(refreshTimer);
-      refreshTimer=setTimeout(async()=>{if(m.kind==='incidents'){await fetchIncidents();if(state.user?.role==='admin')await refreshPrivate();}else if(m.kind==='teams'||m.kind==='assignments')await refreshPrivate();},300);
+      let message;try{message=JSON.parse(e.data);}catch{return;}
+      pendingChanges.add(message.kind);clearTimeout(refreshTimer);
+      refreshTimer=setTimeout(async()=>{
+        const changes=new Set(pendingChanges);pendingChanges.clear();
+        const jobs=[];
+        if(changes.has('incidents'))jobs.push(fetchIncidents());
+        if(changes.has('teams')||changes.has('assignments')||(changes.has('incidents')&&state.user))jobs.push(refreshPrivate());
+        const results=await Promise.allSettled(jobs);
+        if(results.some(r=>r.status==='rejected'))showConnectionError();
+      },300);
     });
   }catch(e){console.warn('Live events unavailable',e)}
-  setInterval(()=>{if(document.visibilityState==='visible')fetchIncidents().catch(()=>{});},60000);
+  setInterval(()=>{if(document.visibilityState==='visible')fetchIncidents().catch(showConnectionError);},60000);
   setInterval(()=>{if(document.visibilityState==='visible')fetchAlerts().catch(()=>{});},10*60000);
 }
 document.addEventListener('DOMContentLoaded',initialize);

@@ -73,3 +73,30 @@ test('official feed, health, routes and logout',async()=>{
   const me=await request('/api/auth/me','GET',null,residentCookie);assert.equal(me.data.user,null);
 });
 
+
+test('team creation preserves availability and validates it',async()=>{
+  const offline=await request('/api/admin/teams','POST',{name:'Reserve crew',specialty:'Supplies',availability:'offline'},adminCookie);
+  assert.equal(offline.status,201);assert.equal(offline.data.team.availability,'offline');
+  const invalid=await request('/api/admin/teams','POST',{name:'Invalid crew',specialty:'Supplies',availability:'unknown'},adminCookie);
+  assert.equal(invalid.status,400);
+});
+test('rejection cancels dispatch, reopening creates a fresh assignment, and progress cannot skip steps',async()=>{
+  const created=await request('/api/incidents','POST',{title:'Test blocked access',description:'A fallen branch is blocking this access road.',category:'road',severity:'moderate',lat:26.35,lon:-80.13},adminCookie);
+  assert.equal(created.status,201);const ident=created.data.incident.id;
+  await request('/api/admin/incidents/'+ident,'PATCH',{status:'verified',team_id:teamId},adminCookie);
+  let assignments=(await request('/api/assignments/mine','GET',null,responderCookie)).data.assignments;
+  const first=assignments.find(a=>a.incident_id===ident);
+  const skipped=await request('/api/assignments/'+first.id,'PATCH',{status:'completed'},responderCookie);
+  assert.equal(skipped.status,409);
+  await request('/api/admin/incidents/'+ident,'PATCH',{status:'rejected'},adminCookie);
+  const progress=await request('/api/assignments/'+first.id,'PATCH',{status:'acknowledged'},responderCookie);
+  assert.equal(progress.status,409);
+  assert.equal((await request('/api/incidents/'+ident)).data.incident.status,'rejected');
+  assignments=(await request('/api/assignments/mine','GET',null,responderCookie)).data.assignments;
+  assert.equal(assignments.find(a=>a.id===first.id).status,'cancelled');
+  await request('/api/admin/incidents/'+ident,'PATCH',{status:'verified'},adminCookie);
+  assignments=(await request('/api/assignments/mine','GET',null,responderCookie)).data.assignments;
+  const fresh=assignments.find(a=>a.incident_id===ident&&a.status==='assigned');
+  assert.ok(fresh);assert.notEqual(fresh.id,first.id);
+  assert.equal((await request('/api/assignments/'+fresh.id,'PATCH',{status:'acknowledged'},responderCookie)).status,200);
+});

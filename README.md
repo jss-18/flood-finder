@@ -3,6 +3,16 @@
 
 **Real community disaster reporting and response-team coordination.** Because powerful storms deserve powerful response.
 
+## Community edition (editing copy)
+
+This branch, `community-interface`, is the revised copy. The original remains on `main`.
+
+Changes include a lighter responsive interface, priority sorting and filtering, Only my reports, fit-to-results mapping, clearer connection states, report flow after sign-in, and fixes for cancelled response assignments and team availability.
+
+See [design plan](docs/DESIGN.md) and [Render deployment proposal](docs/RENDER.md). Figma authoring and live Render deployment remain pending. `render.yaml` proposes paid resources; review charges before applying it.
+
+For a side-by-side local preview, run `PORT=3001 npm start` in this copy, then open http://localhost:3001. Each copy uses its own local data directory. Never commit SQLite files, accounts, or session data.
+
 ## Features
 
 Community reports are public: latitude/longitude, descriptions and any address/landmark typed by the reporter are exposed on the map. Avoid names, medical specifics, home addresses, phone numbers or other personally identifying information in reports. Account email addresses and crew contact details are restricted to authorized roles.
