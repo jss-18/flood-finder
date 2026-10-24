@@ -5,7 +5,7 @@
 
 ## Community edition (editing copy)
 
-This branch, `codex/flood-finder-redesign`, is the revised copy. The original remains on `main`.
+This branch, `community-interface`, is the revised copy. The original remains on `main`.
 
 Changes include a lighter responsive interface, priority sorting and filtering, Only my reports, fit-to-results mapping, clearer connection states, report flow after sign-in, and fixes for cancelled response assignments and team availability.
 

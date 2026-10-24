@@ -4,7 +4,7 @@ services:
   - type: web
     name: flood-finder-community
     runtime: node
-    branch: codex/flood-finder-redesign
+    branch: community-interface
     plan: 0.5c-512mb
     buildCommand: node --check server.js && node --check public/app.js
     startCommand: npm start

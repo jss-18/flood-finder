@@ -1,7 +1,7 @@
 name: Flood Finder checks
 on:
   push:
-    branches: [codex/flood-finder-redesign]
+    branches: [community-interface]
   pull_request:
 permissions:
   contents: read

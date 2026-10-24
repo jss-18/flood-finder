@@ -16,7 +16,7 @@ Only files inside the disk mount persist across restarts. A free service's defau
 ## Pending setup
 1. Connect the intended Render account/workspace and authorize access to the private GitHub repository.
 2. Validate the Blueprint using the authenticated Render CLI: `render blueprints validate render.yaml`. The CLI was unavailable during this revision, so Render-side validation is still pending.
-3. In Render, create a Blueprint from this repository and choose branch `codex/flood-finder-redesign`.
+3. In Render, create a Blueprint from this repository and choose branch `community-interface`.
 4. Set `NWS_USER_AGENT` to a project identifier with a suitable public contact. Review the selected region and current charges, then approve deployment.
 5. Confirm the deployment succeeds and `/api/health` responds; verify maps, weather alerts, registration, and reports through the public HTTPS URL.
 6. Register the initial administrator through the deployed app, then run `npm run admin -- promote <registered-email>` in that service's shell. The command must use the same database path. Sign back in afterward.
